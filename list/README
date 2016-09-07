@@ -1,0 +1,9 @@
+Install Valgrind on CentOS using the following command:
+
+$ sudo yum install valgrind
+
+You can use this tool for finding memory leaks. You can
+find more information about valgrind here:
+
+http://valgrind.org/docs/manual/QuickStart.html
+
