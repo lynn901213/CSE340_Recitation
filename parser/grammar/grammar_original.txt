@@ -1,0 +1,11 @@
+e -> t PLUS e | t
+t -> f MULT t | f
+f -> LPAREN e RPAREN | NUM
+
+FIRST(e) = { LPAREN, NUM }
+FIRST(t) = { LPAREN, NUM }
+FIRST(f) = { LPAREN, NUM }
+
+FOLLOW(e) = { $, RPAREN }
+FOLLOW(t) = { $, PLUS, RPAREN }
+FOLLOW(f) = { $, MULT, PLUS, RPAREN }

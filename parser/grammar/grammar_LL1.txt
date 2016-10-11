@@ -1,0 +1,17 @@
+e -> t e1
+e1 -> PLUS e | epsilon
+t -> f t1
+t1 -> MULT t | epsilon
+f -> LPAREN e RPAREN | NUM
+
+FIRST(e) = { LPAREN, NUM }
+FIRST(e1) = { #, PLUS }
+FIRST(t) = { LPAREN, NUM }
+FIRST(t1) = { #, MULT }
+FIRST(f) = { LPAREN, NUM }
+
+FOLLOW(e) = { $, RPAREN }
+FOLLOW(e1) = { $, RPAREN }
+FOLLOW(t) = { $, PLUS, RPAREN }
+FOLLOW(t1) = { $, PLUS, RPAREN }
+FOLLOW(f) = { $, MULT, PLUS, RPAREN }
