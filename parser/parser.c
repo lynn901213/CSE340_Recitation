@@ -130,94 +130,161 @@ void peek_token()
 
 // -----------------------------------------------------------------------------
 
-void parse_e();
-void parse_e1();
-void parse_t();
-void parse_t1();
-void parse_f();
-
-void parse_e()
+enum Tag
 {
-    puts("e -> t e1");
-    parse_t();
-    parse_e1();
-}
+    TAG_PLUS,
+    TAG_MULT,
+    TAG_NUM
+};
 
-void parse_e1()
+struct Expression
 {
+    enum Tag tag;
+    int value;                  // meaningful if tag == TAG_NUM
+    struct Expression * left;   // meaningful if tag == TAG_PLUS or TAG_MULT
+    struct Expression * right;  // meaningful if tag == TAG_PLUS or TAG_MULT
+};
+
+#define ALLOC(t) (t*) calloc(sizeof(t), 1)
+
+// -----------------------------------------------------------------------------
+
+struct Expression * parse_e();
+struct Expression * parse_t();
+struct Expression * parse_f();
+
+struct Expression * parse_e()
+{
+    struct Expression * t = parse_t();
     next_token();
     if (ttype == PLUS)
     {
-        puts("e1 -> PLUS e");
-        parse_e();
+        struct Expression * e = parse_e();
+        struct Expression * node = ALLOC(struct Expression);
+        node->tag = TAG_PLUS;
+        node->left = t;
+        node->right = e;
+        return node;
     }
     else if (ttype == RPAREN || ttype == END_OF_FILE)
     {
-        puts("e1 -> epsilon");
         unget_token();
+        return t;
     }
     else
     {
         syntax_error(__func__, "expected PLUS, RPAREN or $");
+        return NULL;
     }
 }
 
-void parse_t()
+struct Expression * parse_t()
 {
-    puts("t -> f t1");
-    parse_f();
-    parse_t1();
-}
-
-void parse_t1()
-{
+    struct Expression * f = parse_f();
     next_token();
     if (ttype == MULT)
     {
-        puts("t1 -> MULT t");
-        parse_t();
+        struct Expression * t = parse_t();
+        struct Expression * node = ALLOC(struct Expression);
+        node->tag = TAG_MULT;
+        node->left = f;
+        node->right = t;
+        return node;
     }
     else if (ttype == PLUS || ttype == RPAREN || ttype == END_OF_FILE)
     {
-        puts("t1 -> epsilon");
         unget_token();
+        return f;
     }
     else
     {
         syntax_error(__func__, "expected MULT, PLUS, RPAREN or $");
+        return NULL;
     }
 }
 
-void parse_f()
+struct Expression * parse_f()
 {
     next_token();
     if (ttype == NUM)
     {
-        puts("f -> NUM");
+        struct Expression * node = ALLOC(struct Expression);
+        node->tag = TAG_NUM;
+        node->value = atoi(token);
+        return node;
     }
     else if (ttype == LPAREN)
     {
-        puts("f -> LPAREN e RPAREN");
-        parse_e();
+        struct Expression * e = parse_e();
         expect(RPAREN);
+        return e;
     }
     else
     {
         syntax_error(__func__, "expected NUM or LPAREN");
+        return NULL;
     }
 }
 
-void parse_input()
+struct Expression * parse_input()
 {
-    parse_e();
+    struct Expression * e = parse_e();
     expect(END_OF_FILE);
+    return e;
 }
 
 // -----------------------------------------------------------------------------
 
+void print_expression_prefix(struct Expression * e)
+{
+    switch (e->tag)
+    {
+        case TAG_PLUS:
+            printf("+ ");
+            print_expression_prefix(e->left);
+            print_expression_prefix(e->right);
+            break;
+        case TAG_MULT:
+            printf("* ");
+            print_expression_prefix(e->left);
+            print_expression_prefix(e->right);
+            break;
+        case TAG_NUM:
+            printf("%d ", e->value);
+            break;
+    }
+}
+
+int evaluate_expression(struct Expression * e)
+{
+    switch (e->tag)
+    {
+        case TAG_PLUS:
+            {
+                int left = evaluate_expression(e->left);
+                int right = evaluate_expression(e->right);
+                return left + right;
+            }
+        case TAG_MULT:
+            {
+                int left = evaluate_expression(e->left);
+                int right = evaluate_expression(e->right);
+                return left * right;
+            }
+        case TAG_NUM:
+            return e->value;
+        default:
+            return 0;
+    }
+
+}
+
 int main()
 {
-    parse_input();
+    struct Expression * e = parse_input();
+    print_expression_prefix(e);
+    printf("\n");
+    printf("Result = %d\n", evaluate_expression(e));
     return 0;
 }
 
